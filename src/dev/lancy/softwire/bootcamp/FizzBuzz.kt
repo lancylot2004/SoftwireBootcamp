@@ -19,12 +19,15 @@ fun main() {
         }
 
         // "Fezz" is put just before the first item that starts with 'B', and
-        // is output regardless of above rule for 11.
+        // is output regardless of the rule where 11 displaces other outputs.
         if (it % 13 == 0) {
-            var index = items.indexOfFirst { item -> item.startsWith('B') }
-            if (index == -1) index = items.size
+            val addAt = when (val index = items.indexOfFirst { item -> item.startsWith('B') }) {
+                // If not found, insert at end.
+                -1 -> items.size
+                else -> index
+            }
 
-            items.add(index, "Fezz")
+            items.add(addAt, "Fezz")
         }
 
         if (it % 17 == 0) items.reverse()
