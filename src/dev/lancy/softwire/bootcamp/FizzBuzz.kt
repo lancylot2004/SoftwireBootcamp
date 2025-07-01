@@ -1,7 +1,12 @@
 package dev.lancy.softwire.bootcamp
 
+const val DEFAULT_UP_TO = 100
+
 fun main() {
-    (1..100).forEach {
+    print("Execute FizzBuzz up to [$DEFAULT_UP_TO]: ")
+    val upTo = readlnOrNull()?.toIntOrNull() ?: DEFAULT_UP_TO
+
+    (1..upTo).forEach {
         val items = mutableListOf<String>()
 
         if (it % 11 == 0) {
