@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.ktlint)
     jacoco
 }
 
@@ -11,6 +12,14 @@ repositories {
 }
 
 dependencies {
+    // Ad-hoc jar files for running dynamite.
+    implementation(
+        fileTree("libs") {
+            from("libs")
+            include("*.jar")
+        },
+    )
+
     testImplementation(libs.junit.jupiter)
 }
 
