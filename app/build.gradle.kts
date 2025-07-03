@@ -25,7 +25,7 @@ dependencies {
 
 tasks.withType(KotlinJvmCompile::class).configureEach {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_23)
+        jvmTarget.set(JvmTarget.JVM_24)
     }
 }
 
@@ -39,4 +39,11 @@ tasks.jacocoTestReport {
         xml.required = true
         html.required = false
     }
+}
+
+tasks.jar {
+    manifest { attributes("Main-Class" to "dev.lancy.softwire.dynamite.Runner") }
+
+    // Do not allow duplicate entries.
+    duplicatesStrategy = DuplicatesStrategy.FAIL
 }
