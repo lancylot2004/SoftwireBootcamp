@@ -34,7 +34,7 @@ class GildedRoseTest {
             assertEquals(
                 (lastQuality - expectedDecrement).coerceIn(0..Int.MAX_VALUE),
                 app.items[0].quality,
-                "All items should have their [quality] increased by 1 every day, with some exceptions.",
+                "All items should have their [quality] decreased by 1 every day, with some exceptions.",
             )
 
             lastQuality = app.items[0].quality
@@ -56,7 +56,7 @@ class GildedRoseTest {
             assertEquals(
                 (lastQuality + expectedIncrement).coerceIn(0..MAX_QUALITY),
                 app.items[0].quality,
-                "Aged brie should have its [quality] increased by 1 every day.",
+                "Aged brie should have its [quality] increased by 1 (or 2 after sell by date) every day.",
             )
 
             lastQuality = app.items[0].quality
