@@ -32,6 +32,11 @@ class GildedRose(
                     item.sellIn < 11 -> item modQual INCREMENT * 2
                     else -> item modQual INCREMENT
                 }
+            // Kotlin has no real pattern matching... :)
+            item.name if item.name.startsWith("Conjured") -> {
+                // Conjured items decrease in quality twice as fast.
+                item modQual -INCREMENT * if (item.sellIn <= 0) 4 else 2
+            }
             else -> {
                 // All other items decrease in quality.
                 item modQual -INCREMENT * if (item.sellIn <= 0) 2 else 1
