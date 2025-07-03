@@ -5,26 +5,40 @@ import net.jqwik.api.Arbitrary
 import net.jqwik.api.Combinators
 import net.jqwik.api.ForAll
 import net.jqwik.api.Property
-import net.jqwik.api.PropertyDefaults
 import net.jqwik.api.Provide
-import net.jqwik.api.ShrinkingMode
 import net.jqwik.api.constraints.IntRange
 import org.junit.jupiter.api.Assertions.assertEquals
 
-@PropertyDefaults(tries = 30, shrinking = ShrinkingMode.FULL)
 class GildedRoseTest {
     companion object {
         // / In practice, we shouldn't need to test any number greater than this.
         const val MAX_DAYS = 365
+
+        // / By the specification, no item (except Sulfuras) can have a quality greater than 50.
+        const val MAX_QUALITY = 50
     }
 
-internal class GildedRoseTest {
-    @Test
-    fun foo() {
-        val items = listOf(Item("foo", 0, 0))
-        val app = GildedRose(items)
-        app.updateQuality()
-        assertEquals("fixme", app.items[0].name)
+    @Property
+    fun `quality degrades twice as fast after sell by date`(
+        @ForAll("normalItem") item: Item,
+        @ForAll @IntRange(min = 0, max = MAX_DAYS) daysPassed: Int,
+    ) {
+        // Clarification: "twice as fast" simply means a double in/decrement.
+        val app = GildedRose(listOf(item))
+        var lastQuality = item.quality
+
+        repeat(daysPassed) {
+            app.updateQuality()
+            val expectedDecrement = if (app.items[0].sellIn < 0) 2 else 1
+
+            assertEquals(
+                (lastQuality - expectedDecrement).coerceIn(0..Int.MAX_VALUE),
+                app.items[0].quality,
+                "Quality should degrade by 1 on day $it",
+            )
+
+            lastQuality = app.items[0].quality
+        }
     }
 
     @Provide
@@ -82,10 +96,10 @@ internal class GildedRoseTest {
         Arbitraries
             .integers()
             // Arbitrarily constrain to a year - intuitively shouldn't be necessary to go further!
-            .between(0, 365)
+            .between(0, MAX_DAYS)
 
     fun qualities(): Arbitrary<Int> =
         Arbitraries
             .integers()
-            .between(0, 50)
+            .between(0, MAX_QUALITY)
 }
