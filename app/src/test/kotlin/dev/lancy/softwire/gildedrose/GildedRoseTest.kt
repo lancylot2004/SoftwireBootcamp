@@ -146,6 +146,28 @@ class GildedRoseTest {
         }
     }
 
+    @Property
+    fun `conjured items degrade in quality twice as fast`(
+        @ForAll("conjuredItems") item: Item,
+        @ForAll @IntRange(min = 0, max = MAX_DAYS) daysPassed: Int,
+    ) {
+        val app = GildedRose(listOf(item))
+        var lastQuality = item.quality
+
+        repeat(daysPassed) {
+            app.updateQuality()
+            val expectedDecrement = if (app.items[0].sellIn < 0) 4 else 2
+
+            assertEquals(
+                (lastQuality - expectedDecrement).coerceIn(0..Int.MAX_VALUE),
+                app.items[0].quality,
+                "Conjured items should have their [quality] decreased by 2 every day, or 4 after sell by date.",
+            )
+
+            lastQuality = app.items[0].quality
+        }
+    }
+
     @Provide
     fun anyItemExceptSulfuras(): Arbitrary<Item> =
         Arbitraries.oneOf(
@@ -182,6 +204,13 @@ class GildedRoseTest {
         Combinators
             .combine(sellIns(), qualities())
             .`as` { sellIn, quality -> Item("Aged Brie", sellIn, quality) }
+
+    @Provide
+    fun conjuredItems(): Arbitrary<Item> =
+        normalItem().map {
+            it.name = "Conjured ${it.name}"
+            it
+        }
 
     fun names(): Arbitrary<String> =
         Arbitraries
