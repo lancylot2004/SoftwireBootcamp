@@ -47,13 +47,39 @@ class GildedRoseTest {
         var lastQuality = item.quality
 
         repeat(daysPassed) {
+            // Stop testing if we reach the sell by date.
+            if (app.items[0].sellIn == 0) return@repeat
+
             app.updateQuality()
-            val expectedIncrement = if (app.items[0].sellIn < 0) 2 else 1
 
             assertEquals(
-                (lastQuality + expectedIncrement).coerceIn(0..GildedRose.MAX_QUALITY),
+                (lastQuality + 1).coerceIn(0..GildedRose.MAX_QUALITY),
                 app.items[0].quality,
-                "Aged brie should have its [quality] increased by 1 (or 2 after sell by date) every day.",
+                "Aged brie should have its [quality] increased by 1 every day before the sell by date.",
+            )
+
+            lastQuality = app.items[0].quality
+        }
+    }
+
+    @Property
+    fun `aged brie doubly increases in quality after sellIn date`(
+        @ForAll("agedBrie") item: Item,
+        @ForAll @IntRange(min = 0, max = MAX_DAYS) daysPassed: Int,
+    ) {
+        val app = GildedRose(listOf(item))
+        var lastQuality = item.quality
+
+        // Force the item to be past its sell by date.
+        item.sellIn = 0
+
+        repeat(daysPassed) {
+            app.updateQuality()
+
+            assertEquals(
+                (lastQuality + 2).coerceIn(0..GildedRose.MAX_QUALITY),
+                app.items[0].quality,
+                "Aged brie should have its [quality] increased by 2 every day after the sell by date.",
             )
 
             lastQuality = app.items[0].quality
