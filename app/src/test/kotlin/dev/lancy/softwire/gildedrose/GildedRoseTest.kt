@@ -29,7 +29,7 @@ class GildedRoseTest {
             val expectedDecrement = if (app.items[0].sellIn < 0) 2 else 1
 
             assertEquals(
-                (lastQuality - expectedDecrement).coerceIn(0..Int.MAX_VALUE),
+                (lastQuality - expectedDecrement).coerceQuality(),
                 app.items[0].quality,
                 "All items should have their [quality] decreased by 1 every day, with some exceptions.",
             )
@@ -53,7 +53,7 @@ class GildedRoseTest {
             app.updateQuality()
 
             assertEquals(
-                (lastQuality + 1).coerceIn(0..GildedRose.MAX_QUALITY),
+                (lastQuality + 1).coerceQuality(),
                 app.items[0].quality,
                 "Aged brie should have its [quality] increased by 1 every day before the sell by date.",
             )
@@ -77,7 +77,7 @@ class GildedRoseTest {
             app.updateQuality()
 
             assertEquals(
-                (lastQuality + 2).coerceIn(0..GildedRose.MAX_QUALITY),
+                (lastQuality + 2).coerceQuality(),
                 app.items[0].quality,
                 "Aged brie should have its [quality] increased by 2 every day after the sell by date.",
             )
@@ -117,7 +117,7 @@ class GildedRoseTest {
     }
 
     @Property
-    fun `backstage passes increase in quality more as concert approaches but is zeroed after concert`(
+    fun `backstage passes increase in quality in a special way`(
         @ForAll("backstagePasses") item: Item,
         @ForAll @IntRange(min = 0, max = MAX_DAYS) daysPassed: Int,
     ) {
@@ -127,20 +127,24 @@ class GildedRoseTest {
 
         repeat(daysPassed) {
             app.updateQuality()
-            val expectedIncrement =
-                when (lastSellIn) {
-                    // Quality should be zeroed after concert.
-                    in Int.MIN_VALUE..0 -> -lastQuality
-                    in 1..5 -> 3
-                    in 6..10 -> 2
-                    else -> 1
-                }
+            val (expectedIncrement, errorMessage) = when (lastSellIn) {
+                // Quality should be zeroed after concert.
+                in Int.MIN_VALUE..0 -> -lastQuality to "Backstage pass should have zero [quality] after the concert."
+                in 1..5 ->
+                    3 to "Backstage pass should have its [quality] increased by 3 when there are 5 " +
+                        "or fewer days left to the concert."
+                in 6..10 ->
+                    2 to "Backstage pass should have its [quality] increased by 2 when there are 10 or fewer days " +
+                        "left to the concert."
+                else ->
+                    1 to "Backstage pass should have its [quality] increased by 1 when there are more than 10 days " +
+                        "left to the concert."
+            }
 
             assertEquals(
-                (lastQuality + expectedIncrement).coerceIn(0..GildedRose.MAX_QUALITY),
+                (lastQuality + expectedIncrement).coerceQuality(),
                 app.items[0].quality,
-                "Backstage pass should have its [quality] change by $expectedIncrement from $lastQuality on " +
-                    "day $it, when there are ${item.sellIn} days left to the concert.",
+                errorMessage,
             )
 
             lastQuality = app.items[0].quality
@@ -160,7 +164,7 @@ class GildedRoseTest {
             app.updateQuality()
 
             assertEquals(
-                (lastSellIn - 1).coerceIn(Int.MIN_VALUE..Int.MAX_VALUE),
+                (lastSellIn - 1),
                 app.items[0].sellIn,
                 "All items should have their [sellIn] decreased by 1 every day, except for Sulfuras.",
             )
@@ -182,7 +186,7 @@ class GildedRoseTest {
             val expectedDecrement = if (app.items[0].sellIn < 0) 4 else 2
 
             assertEquals(
-                (lastQuality - expectedDecrement).coerceIn(0..Int.MAX_VALUE),
+                (lastQuality - expectedDecrement).coerceQuality(),
                 app.items[0].quality,
                 "Conjured items should have their [quality] decreased by 2 every day, or 4 after sell by date.",
             )
@@ -193,7 +197,7 @@ class GildedRoseTest {
 
     @Provide
     @Suppress("unused")
-    fun anyItemExceptSulfuras(): Arbitrary<Item> =
+    private fun anyItemExceptSulfuras(): Arbitrary<Item> =
         Arbitraries.oneOf(
             normalItem(),
             backstagePasses(),
@@ -201,7 +205,7 @@ class GildedRoseTest {
         )
 
     @Provide
-    fun normalItem(): Arbitrary<Item> {
+    private fun normalItem(): Arbitrary<Item> {
         val names = names()
         val sellIns = sellIns()
         val qualities = qualities()
@@ -213,32 +217,32 @@ class GildedRoseTest {
 
     @Provide
     @Suppress("unused")
-    fun sulfuras(): Arbitrary<Item> =
+    private fun sulfuras(): Arbitrary<Item> =
         Combinators
             .combine(listOf(sellIns()))
             .`as` { sellIn -> Item("Sulfuras, Hand of Ragnaros", sellIn[0], 80) }
 
     @Provide
-    fun backstagePasses(): Arbitrary<Item> =
+    private fun backstagePasses(): Arbitrary<Item> =
         Combinators
             .combine(sellIns(), qualities())
             .`as` { sellIn, quality -> Item("Backstage passes to a TAFKAL80ETC concert", sellIn, quality) }
 
     @Provide
-    fun agedBrie(): Arbitrary<Item> =
+    private fun agedBrie(): Arbitrary<Item> =
         Combinators
             .combine(sellIns(), qualities())
             .`as` { sellIn, quality -> Item("Aged Brie", sellIn, quality) }
 
     @Provide
     @Suppress("unused")
-    fun conjuredItems(): Arbitrary<Item> =
+    private fun conjuredItems(): Arbitrary<Item> =
         normalItem().map {
             it.name = "Conjured ${it.name}"
             it
         }
 
-    fun names(): Arbitrary<String> =
+    private fun names(): Arbitrary<String> =
         Arbitraries
             .strings()
             .ofMinLength(1)
@@ -251,13 +255,15 @@ class GildedRoseTest {
                     !it.startsWith("Backstage passes")
             }
 
-    fun sellIns(): Arbitrary<Int> =
+    private fun sellIns(): Arbitrary<Int> =
         Arbitraries
             .integers()
             .between(0, MAX_DAYS)
 
-    fun qualities(): Arbitrary<Int> =
+    private fun qualities(): Arbitrary<Int> =
         Arbitraries
             .integers()
             .between(0, GildedRose.MAX_QUALITY)
+
+    private fun Int.coerceQuality(): Int = this.coerceIn(0..GildedRose.MAX_QUALITY)
 }
