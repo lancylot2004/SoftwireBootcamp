@@ -50,4 +50,11 @@ tasks.jar {
     manifest { attributes("Main-Class" to "dev.lancy.softwire.dynamite.RunnerKt") }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    archiveFileName.set("dynamiteBot.jar")
+}
+
+tasks.register<UploadTask>("upload") {
+    dependsOn("jar")
+    botName = project.findProperty("botname")?.toString()
+        ?: throw GradleException("[Missing Name] Please provide a bot name using -Pbotname=YourBotName")
 }
