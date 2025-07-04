@@ -25,8 +25,13 @@ dependencies {
 
 tasks.withType(KotlinJvmCompile::class).configureEach {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_23)
+        jvmTarget.set(JvmTarget.JVM_1_8)
     }
+}
+
+tasks.withType(JavaCompile::class).configureEach {
+    options.encoding = "UTF-8"
+    options.release.set(8)
 }
 
 jacoco {
@@ -42,8 +47,7 @@ tasks.jacocoTestReport {
 }
 
 tasks.jar {
-    manifest { attributes("Main-Class" to "dev.lancy.softwire.dynamite.Runner") }
-
-    // Do not allow duplicate entries.
-    duplicatesStrategy = DuplicatesStrategy.FAIL
+    manifest { attributes("Main-Class" to "dev.lancy.softwire.dynamite.RunnerKt") }
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
