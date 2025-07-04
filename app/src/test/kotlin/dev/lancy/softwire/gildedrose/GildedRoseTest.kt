@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 
 class GildedRoseTest {
     companion object {
-        /// In practice, we shouldn't need to test any number greater than this.
+        // / In practice, we shouldn't need to test any number greater than this.
         const val MAX_DAYS = 365
     }
 
@@ -117,7 +117,7 @@ class GildedRoseTest {
     }
 
     @Property
-    fun `backstage passes increase in quality in a special way`(
+    fun `backstage passes increase in quality as concert approaches and zeroes after`(
         @ForAll("backstagePasses") item: Item,
         @ForAll @IntRange(min = 0, max = MAX_DAYS) daysPassed: Int,
     ) {
@@ -127,19 +127,20 @@ class GildedRoseTest {
 
         repeat(daysPassed) {
             app.updateQuality()
-            val (expectedIncrement, errorMessage) = when (lastSellIn) {
-                // Quality should be zeroed after concert.
-                in Int.MIN_VALUE..0 -> -lastQuality to "Backstage pass should have zero [quality] after the concert."
-                in 1..5 ->
-                    3 to "Backstage pass should have its [quality] increased by 3 when there are 5 " +
-                        "or fewer days left to the concert."
-                in 6..10 ->
-                    2 to "Backstage pass should have its [quality] increased by 2 when there are 10 or fewer days " +
-                        "left to the concert."
-                else ->
-                    1 to "Backstage pass should have its [quality] increased by 1 when there are more than 10 days " +
-                        "left to the concert."
-            }
+            val (expectedIncrement, errorMessage) =
+                when (lastSellIn) {
+                    // Quality should be zeroed after concert.
+                    in Int.MIN_VALUE..0 -> -lastQuality to "Backstage pass should have zero [quality] after the concert."
+                    in 1..5 ->
+                        3 to "Backstage pass should have its [quality] increased by 3 when there are 5 " +
+                            "or fewer days left to the concert."
+                    in 6..10 ->
+                        2 to "Backstage pass should have its [quality] increased by 2 when there are 10 or fewer days " +
+                            "left to the concert."
+                    else ->
+                        1 to "Backstage pass should have its [quality] increased by 1 when there are more than 10 days " +
+                            "left to the concert."
+                }
 
             assertEquals(
                 (lastQuality + expectedIncrement).coerceQuality(),

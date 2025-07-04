@@ -35,7 +35,7 @@ sealed class GildedRule {
      * - increases by 1 when there are more than 10 days to sell,
      * - drops to 0 when the sell-by date has passed.
      */
-    data object BackstageQualityIncrement : GildedRule() {
+    data object BackstageQualityChanges : GildedRule() {
         override fun update(item: Item) = when (item.sellIn) {
             in Int.MIN_VALUE..0 -> item.quality = 0
             in 1..5 -> item modQual GildedRose.INCREMENT * 3
