@@ -1,6 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
-
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktlint)
@@ -20,18 +17,27 @@ dependencies {
         },
     )
 
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.jqwik)
+    testRuntimeOnly(libs.junit.launcher)
+    compileOnly(libs.jetbrains.annotations)
 }
 
-tasks.withType(KotlinJvmCompile::class).configureEach {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_24)
-    }
+kotlin {
+    jvmToolchain(24)
 }
 
 jacoco {
     toolVersion = "0.8.13"
     reportsDirectory = layout.buildDirectory.dir("build/reports/jacoco")
+}
+
+tasks.jar {
+    manifest { attributes("Main-Class" to "dev.lancy.softwire.dynamite.Runner") }
+
+    // Do not allow duplicate entries.
+    duplicatesStrategy = DuplicatesStrategy.FAIL
 }
 
 tasks.jacocoTestReport {
@@ -41,9 +47,6 @@ tasks.jacocoTestReport {
     }
 }
 
-tasks.jar {
-    manifest { attributes("Main-Class" to "dev.lancy.softwire.dynamite.Runner") }
-
-    // Do not allow duplicate entries.
-    duplicatesStrategy = DuplicatesStrategy.FAIL
+tasks.test {
+    useJUnitPlatform()
 }

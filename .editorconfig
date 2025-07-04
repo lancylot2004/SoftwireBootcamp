@@ -1,0 +1,11 @@
+# noinspection EditorConfigKeyCorrectness
+[*.kt]
+ktlint_standard_multiline-expression-wrapping = disabled
+ktlint_standard_function-naming = disabled
+ktlint_standard_if-else-wrapping = disabled
+ktlint_standard_function-signature = disabled
+standard_wrapping = disabled
+standard_trailing-comma-on-call-site = disabled
+ktlint_standard_class-signature = disabled
+ktlint_standard_statement-wrapping = disabled
+ktlint_standard_comment-spacing = disabled

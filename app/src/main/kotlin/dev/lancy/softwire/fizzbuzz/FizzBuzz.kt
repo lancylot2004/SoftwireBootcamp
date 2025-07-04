@@ -1,4 +1,4 @@
-package dev.lancy.softwire.bootcamp
+package dev.lancy.softwire.fizzbuzz
 
 const val DEFAULT_UP_TO = 100
 
