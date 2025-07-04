@@ -11,11 +11,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 
 class GildedRoseTest {
     companion object {
-        // / In practice, we shouldn't need to test any number greater than this.
+        /// In practice, we shouldn't need to test any number greater than this.
         const val MAX_DAYS = 365
-
-        // / By the specification, no item (except Sulfuras) can have a greater quality.
-        const val MAX_QUALITY = 50
     }
 
     @Property
@@ -54,7 +51,7 @@ class GildedRoseTest {
             val expectedIncrement = if (app.items[0].sellIn < 0) 2 else 1
 
             assertEquals(
-                (lastQuality + expectedIncrement).coerceIn(0..MAX_QUALITY),
+                (lastQuality + expectedIncrement).coerceIn(0..GildedRose.MAX_QUALITY),
                 app.items[0].quality,
                 "Aged brie should have its [quality] increased by 1 (or 2 after sell by date) every day.",
             )
@@ -114,7 +111,7 @@ class GildedRoseTest {
                 }
 
             assertEquals(
-                (lastQuality + expectedIncrement).coerceIn(0..MAX_QUALITY),
+                (lastQuality + expectedIncrement).coerceIn(0..GildedRose.MAX_QUALITY),
                 app.items[0].quality,
                 "Backstage pass should have its [quality] change by $expectedIncrement from $lastQuality on " +
                     "day $it, when there are ${item.sellIn} days left to the concert.",
@@ -169,6 +166,7 @@ class GildedRoseTest {
     }
 
     @Provide
+    @Suppress("unused")
     fun anyItemExceptSulfuras(): Arbitrary<Item> =
         Arbitraries.oneOf(
             normalItem(),
@@ -188,6 +186,7 @@ class GildedRoseTest {
     }
 
     @Provide
+    @Suppress("unused")
     fun sulfuras(): Arbitrary<Item> =
         Combinators
             .combine(listOf(sellIns()))
@@ -206,6 +205,7 @@ class GildedRoseTest {
             .`as` { sellIn, quality -> Item("Aged Brie", sellIn, quality) }
 
     @Provide
+    @Suppress("unused")
     fun conjuredItems(): Arbitrary<Item> =
         normalItem().map {
             it.name = "Conjured ${it.name}"
@@ -216,8 +216,8 @@ class GildedRoseTest {
         Arbitraries
             .strings()
             .ofMinLength(1)
-            // It should not be necessary to constrain the length, but it helps avoid
-            // issues with the test framework's shrinking logic.
+            // Technically not necessary to constrain the length, but it
+            // helps avoid issues with shrinking logic.
             .ofMaxLength(10)
             .filter {
                 it != "Sulfuras, Hand of Ragnaros" &&
@@ -228,11 +228,10 @@ class GildedRoseTest {
     fun sellIns(): Arbitrary<Int> =
         Arbitraries
             .integers()
-            // Arbitrarily constrain to a year - intuitively shouldn't be necessary to go further!
             .between(0, MAX_DAYS)
 
     fun qualities(): Arbitrary<Int> =
         Arbitraries
             .integers()
-            .between(0, MAX_QUALITY)
+            .between(0, GildedRose.MAX_QUALITY)
 }
