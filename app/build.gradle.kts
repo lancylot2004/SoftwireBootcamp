@@ -1,49 +1,50 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktlint)
-    jacoco
 }
 
 repositories {
     mavenCentral()
+    flatDir {
+        dirs("libs")
+    }
 }
 
 dependencies {
-    // Ad-hoc jar files for running dynamite.
-    implementation(
-        fileTree("libs") {
-            from("libs")
-            include("*.jar")
-        },
-    )
+    // Dynamite | The Game... | ????
+    implementation(":dynamite.interface")
+    implementation(":dynamite.runner")
 
+    compileOnly(libs.jetbrains.annotations)
+
+    // JUnit 5 | Testing Framework | https://github.com/junit-team/junit-framework/ | EPL-2.0
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.launcher)
+
+    // jqwik | Property-Based Testing | https://github.com/jqwik-team/jqwik | EPL-2.0
+    testImplementation(libs.jqwik)
 }
 
-tasks.withType(KotlinJvmCompile::class).configureEach {
+tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_1_8)
     }
 }
 
-tasks.withType(JavaCompile::class).configureEach {
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_1_8)
+    }
+}
+
+tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.release.set(8)
-}
-
-jacoco {
-    toolVersion = "0.8.13"
-    reportsDirectory = layout.buildDirectory.dir("build/reports/jacoco")
-}
-
-tasks.jacocoTestReport {
-    reports {
-        xml.required = true
-        html.required = false
-    }
 }
 
 tasks.jar {
@@ -57,4 +58,8 @@ tasks.register<UploadTask>("upload") {
     dependsOn("jar")
     botName = project.findProperty("botname")?.toString()
         ?: throw GradleException("[Missing Name] Please provide a bot name using -Pbotname=YourBotName")
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
