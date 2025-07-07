@@ -2,12 +2,18 @@
 # https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
 
 [versions]
-junit5 = "5.13.1"
+jetbrains-annotations = "23.0.0"
+jqwik = "1.9.3"
+junit5 = "5.13.2"
 kotlin = "2.2.0"
 ktlint = "12.3.0"
 
 [libraries]
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
+jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
+jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

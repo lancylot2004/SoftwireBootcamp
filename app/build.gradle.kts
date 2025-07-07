@@ -20,30 +20,20 @@ dependencies {
         },
     )
 
+    testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.jqwik)
+    testRuntimeOnly(libs.junit.launcher)
+    compileOnly(libs.jetbrains.annotations)
 }
 
-tasks.withType(KotlinJvmCompile::class).configureEach {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_1_8)
-    }
-}
-
-tasks.withType(JavaCompile::class).configureEach {
-    options.encoding = "UTF-8"
-    options.release.set(8)
+kotlin {
+    jvmToolchain(24)
 }
 
 jacoco {
     toolVersion = "0.8.13"
     reportsDirectory = layout.buildDirectory.dir("build/reports/jacoco")
-}
-
-tasks.jacocoTestReport {
-    reports {
-        xml.required = true
-        html.required = false
-    }
 }
 
 tasks.jar {
@@ -57,4 +47,15 @@ tasks.register<UploadTask>("upload") {
     dependsOn("jar")
     botName = project.findProperty("botname")?.toString()
         ?: throw GradleException("[Missing Name] Please provide a bot name using -Pbotname=YourBotName")
+}
+
+tasks.jacocoTestReport {
+    reports {
+        xml.required = true
+        html.required = false
+    }
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
