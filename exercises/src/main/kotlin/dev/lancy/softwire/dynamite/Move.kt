@@ -15,13 +15,14 @@ enum class Move {
     fun toOneHot(): FloatArray = FloatArray(entries.size) { if (it == ordinal) 1f else 0f }
 
     companion object {
-        val JMOVE_MAPPINGS = mapOf(
-            JMove.R to ROCK,
-            JMove.P to PAPER,
-            JMove.S to SCISSORS,
-            JMove.D to DYNAMITE,
-            JMove.W to WATER,
-        )
+        val JMOVE_MAPPINGS =
+            mapOf(
+                JMove.R to ROCK,
+                JMove.P to PAPER,
+                JMove.S to SCISSORS,
+                JMove.D to DYNAMITE,
+                JMove.W to WATER,
+            )
 
         fun fromIndex(index: Int): Move = entries[index]
     }

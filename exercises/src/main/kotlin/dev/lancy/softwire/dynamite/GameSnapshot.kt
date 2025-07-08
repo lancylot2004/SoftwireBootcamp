@@ -7,12 +7,6 @@ data class GameSnapshot(
     val playerOne: PlayerSnapshot,
     val playerTwo: PlayerSnapshot,
 ) {
-    companion object {
-        const val MAX_ROLLOVER = 1000f
-        const val MAX_GAME_LENGTH = 2500f
-        const val MAX_DYNAMITE = 100f
-    }
-
     data class PlayerSnapshot(
         val move: Move,
         val dynamiteLeft: Int,
@@ -20,39 +14,26 @@ data class GameSnapshot(
         val roundsSinceWater: Int,
         val moveProbabilities: EnumMap<Move, Float>,
     ) {
-        fun aggregate(rollover: Float): FloatArray {
-            val rolloverNorm = (rollover / MAX_ROLLOVER).coerceAtMost(1.0f)
-            val dynamiteLeftNorm = dynamiteLeft / MAX_DYNAMITE
-            val roundsSinceDynamiteNorm = (roundsSinceDynamite / MAX_GAME_LENGTH).coerceAtMost(1.0f)
-            val roundsSinceWaterNorm = (roundsSinceWater / MAX_GAME_LENGTH).coerceAtMost(1.0f)
-            val orderedProbabilities = Move.entries.map { moveProbabilities[it] ?: 0.0f }.toFloatArray()
-
-            return floatArrayOf(
-                rolloverNorm,
-                dynamiteLeftNorm,
-                roundsSinceDynamiteNorm,
-                roundsSinceWaterNorm,
-            ) + move.toOneHot() + orderedProbabilities
-        }
+        fun aggregate(rollover: Float): FloatArray =
+            floatArrayOf(
+                rollover,
+                dynamiteLeft.toFloat(),
+                roundsSinceDynamite.toFloat(),
+                roundsSinceWater.toFloat(),
+            ) + move.toOneHot() + moveProbabilities.values.toFloatArray()
 
         companion object {
             fun neutral(): PlayerSnapshot = PlayerSnapshot(
                 move = Move.ROCK,
-                dynamiteLeft = MAX_DYNAMITE.toInt(),
-                roundsSinceDynamite = 0,
-                roundsSinceWater = 0,
+                dynamiteLeft = 100,
+                roundsSinceDynamite = Int.MAX_VALUE,
+                roundsSinceWater = Int.MAX_VALUE,
                 moveProbabilities = EnumMap<Move, Float>(Move::class.java).apply {
-                    Move.entries.forEach { set(it, 0.2f) }
+                    Move.entries.forEach { set(it, 1f / Move.entries.size) }
                 },
             )
         }
     }
-
-    fun stateFeatures(): FloatArray = floatArrayOf(
-        playerOne.dynamiteLeft / MAX_DYNAMITE,
-        playerTwo.dynamiteLeft / MAX_DYNAMITE,
-        (rollover / MAX_ROLLOVER).coerceAtMost(1.0f),
-    )
 
     fun combinedFeatures(): FloatArray =
         playerOne.aggregate(rollover.toFloat()) + playerTwo.aggregate(rollover.toFloat())

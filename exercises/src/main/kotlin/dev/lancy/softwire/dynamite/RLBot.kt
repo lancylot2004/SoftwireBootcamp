@@ -1,76 +1,101 @@
 package dev.lancy.softwire.dynamite
 
-import ai.onnxruntime.OnnxTensor
-import ai.onnxruntime.OrtEnvironment
-import ai.onnxruntime.OrtSession
 import com.softwire.dynamite.bot.Bot
 import com.softwire.dynamite.game.Gamestate
-import java.nio.FloatBuffer
-import java.nio.file.Files
+import io.kinference.core.KIEngine
+import io.kinference.core.data.tensor.asTensor
+import io.kinference.core.model.KIModel
+import io.kinference.ndarray.arrays.FloatNDArray
+import kotlinx.coroutines.runBlocking
 import com.softwire.dynamite.game.Move as JMove
 
-class RLBot(modelPath: String, private val windowSize: Int) : Bot {
-    private val env = OrtEnvironment.getEnvironment()
-    private val session = loadOnnxModelFromResources(modelPath, env)
+private const val HISTORY_INPUT = "history_input"
+private const val STATE_INPUT = "state_input"
+private const val OUTPUT_NAME = "output"
+
+class RLBot(
+    modelPath: String,
+    private val windowSize: Int,
+) : Bot {
+    private val model = runBlocking { loadOnnxModelFromResources(modelPath) }
 
     override fun makeMove(state: Gamestate): JMove {
         val snapshots = state.rounds.toGameSnapshots()
+        val (historyInput, stateInput) = runBlocking { prepareModelInputs(snapshots, windowSize) }
 
-        val (history, currentState) = prepareModelInputs(snapshots, windowSize, env)
-        val inputs = mapOf(
-            "history_input" to history,
-            "state_input" to currentState,
-        )
+        val inputTensors =
+            listOf(
+                historyInput.asTensor(HISTORY_INPUT),
+                stateInput.asTensor(STATE_INPUT),
+            )
 
-        session.run(inputs).use { result ->
-            val logits = (result[0].value as Array<FloatArray>)[0]
-            val bestIndex = logits.indices.maxByOrNull { logits[it] } ?: 0
-            return Move.fromIndex(bestIndex).toJMove()
-        }
+        val output = runBlocking { model.predict(inputTensors) }
+
+        val logitsTensor = output[OUTPUT_NAME]?.data
+        requireNotNull(logitsTensor) { "[Logit Output Missing] Check `OUTPUT_NAME`?" }
+        require(logitsTensor is FloatNDArray) { "[Unexpected Logit Output] ${logitsTensor::class}" }
+        require(logitsTensor.shape.contentEquals(intArrayOf(1, 5))) { "[Logit Dimension Mismatch] Expected vector of 5." }
+
+        val bestMoveIdx = runBlocking { logitsTensor.argmax(1).getLinear(0) }
+        return Move.fromIndex(bestMoveIdx).toJMove()
     }
 
-    private fun loadOnnxModelFromResources(resourcePath: String, env: OrtEnvironment): OrtSession {
-        val modelStream = object {}.javaClass.getResourceAsStream(resourcePath)
-            ?: throw IllegalArgumentException("Model not found in resources: $resourcePath")
+    private suspend fun loadOnnxModelFromResources(resourcePath: String): KIModel {
+        val resourceStream =
+            object {}.javaClass.getResourceAsStream(resourcePath)
+                ?: error("Resource not found: $resourcePath")
 
-        val tempFile = Files.createTempFile("dynamite_model", ".onnx").toFile()
-        tempFile.outputStream().use { modelStream.copyTo(it) }
+        val tempFile =
+            kotlin.io.path
+                .createTempFile(suffix = ".onnx")
+                .toFile()
+        tempFile.deleteOnExit()
+        resourceStream.use { input ->
+            tempFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        }
 
-        return env.createSession(tempFile.absolutePath, OrtSession.SessionOptions())
+        return KIEngine.loadModel(tempFile.absolutePath, optimize = true)
     }
 
     private fun prepareModelInputs(
         snapshots: List<GameSnapshot>,
         windowSize: Int,
-        env: OrtEnvironment,
-    ): Pair<OnnxTensor, OnnxTensor> {
-        val paddedSnapshots = snapshots.padHistory(windowSize)
-        val history = paddedSnapshots.flatMap { it.combinedFeatures().asList() }.toFloatArray()
+    ): Pair<FloatNDArray, FloatNDArray> {
+        val featureSize = snapshots.firstOrNull()?.combinedFeatures()?.size ?: 28
+        val history: FloatArray
+        val lastState: FloatArray
 
-        val lastState = paddedSnapshots.last().stateFeatures()
+        if (snapshots.isEmpty()) {
+            val neutral =
+                GameSnapshot.PlayerSnapshot.neutral().aggregate(0f) +
+                    GameSnapshot.PlayerSnapshot.neutral().aggregate(0f)
+            history = FloatArray(windowSize * neutral.size) { 0f }
+            lastState = neutral
+        } else {
+            val paddedSnapshots = snapshots.padHistory(windowSize)
+            history = paddedSnapshots.flatMap { it.combinedFeatures().asList() }.toFloatArray()
+            lastState = snapshots.last().combinedFeatures()
+        }
 
-        val historyTensor = OnnxTensor.createTensor(
-            env,
-            FloatBuffer.wrap(history),
-            longArrayOf(1, windowSize.toLong(), 28),
-        )
+        if (history.isEmpty()) throw IllegalStateException("History features array is empty")
+        if (lastState.isEmpty()) throw IllegalStateException("State features array is empty")
 
-        val stateTensor = OnnxTensor.createTensor(
-            env,
-            FloatBuffer.wrap(lastState),
-            longArrayOf(1, 3),
-        )
+        val historyNDArray = FloatNDArray(1, windowSize, featureSize) { idx: Int -> history[idx] }
+        val stateNDArray = FloatNDArray(1, featureSize) { idx: Int -> lastState[idx] }
 
-        return historyTensor to stateTensor
+        return historyNDArray to stateNDArray
     }
 
     private fun List<GameSnapshot>.padHistory(windowSize: Int): List<GameSnapshot> {
         val padCount = (windowSize - size).coerceAtLeast(0)
-        val neutral = GameSnapshot(
-            rollover = 0,
-            playerOne = GameSnapshot.PlayerSnapshot.neutral(),
-            playerTwo = GameSnapshot.PlayerSnapshot.neutral(),
-        )
+        val neutral =
+            GameSnapshot(
+                rollover = 0,
+                playerOne = GameSnapshot.PlayerSnapshot.neutral(),
+                playerTwo = GameSnapshot.PlayerSnapshot.neutral(),
+            )
         return List(padCount) { neutral } + takeLast(windowSize)
     }
 }

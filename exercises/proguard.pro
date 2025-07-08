@@ -1,0 +1,18 @@
+-keep class dev.lancy.softwire.dynamite.** { *; }
+-keep class com.softwire.dynamite.runner.** { *; }
+-keep class com.softwire.dynamite.runner.DynamiteRunner$* { *; }
+-keep class kotlin.Metadata { *; }
+-keep class kotlin.jvm.functions.Function* { *; }
+-keep class kotlin.coroutines.** { *; }
+-keep class kotlin.reflect.** { *; }
+-keep class kotlin.** { *; }
+-keep class kotlin.jvm.** { *; }
+-keepclassmembers class kotlin.** { *; }
+-keep class io.kinference.** { *; }
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod, SourceFile, LineNumberTable, Exceptions, Deprecated, *Manifest*
+-keeppackagenames META-INF.services
+-adaptclassstrings
+-dontwarn **
+-ignorewarnings
+-dontobfuscate
+-dontoptimize
