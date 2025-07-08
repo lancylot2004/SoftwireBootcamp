@@ -7,6 +7,7 @@ jqwik = "1.9.3"
 junit5 = "5.13.2"
 kotlin = "2.2.0"
 ktlint = "12.3.0"
+onnx = "1.22.0"
 
 [libraries]
 jetbrains-annotations = { module = "org.jetbrains:annotations", version.ref = "jetbrains-annotations" }
@@ -14,6 +15,7 @@ jqwik = { module = "net.jqwik:jqwik", version.ref = "jqwik" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+onnx-runtime = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnx" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

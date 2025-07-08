@@ -1,0 +1,12 @@
+config.ini
+*.prof
+__pycache__/**
+bots.json
+
+# Data Directories
+dumps/**
+history/**
+models/**
+
+# Generated Bots
+bot-*.py

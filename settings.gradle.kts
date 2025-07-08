@@ -1,2 +1,2 @@
 rootProject.name = "SoftwireBootcamp"
-include("app")
+include("exercises")

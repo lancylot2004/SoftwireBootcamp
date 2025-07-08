@@ -114,8 +114,10 @@ abstract class UploadTask
                 flush()
             }
 
-            val responseCode = connection.responseCode
-            val desiredCode = if (method == "POST") 200 else 201
-            return responseCode == desiredCode
+            val result = connection.responseCode == if (method == "POST") 200 else 201
+            if (!result) {
+                println("[Upload Failed] ${connection.responseCode}: ${connection.errorStream?.bufferedReader()?.readText()}")
+            }
+            return result
         }
     }
