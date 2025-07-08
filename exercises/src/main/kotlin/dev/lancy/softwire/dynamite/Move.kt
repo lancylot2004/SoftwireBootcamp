@@ -10,15 +10,6 @@ enum class Move {
     WATER,
     ;
 
-    infix fun beats(other: Move): Boolean = when (this) {
-        other -> false
-        ROCK -> other == SCISSORS || other == DYNAMITE
-        PAPER -> other == ROCK || other == DYNAMITE
-        SCISSORS -> other == PAPER || other == DYNAMITE
-        DYNAMITE -> other != WATER
-        WATER -> other == DYNAMITE
-    }
-
     fun toJMove(): JMove = JMOVE_MAPPINGS.entries.first { it.value == this }.key
 
     fun toOneHot(): FloatArray = FloatArray(entries.size) { if (it == ordinal) 1f else 0f }
@@ -31,8 +22,7 @@ enum class Move {
             JMove.D to DYNAMITE,
             JMove.W to WATER,
         )
+
+        fun fromIndex(index: Int): Move = entries[index]
     }
 }
-
-fun JMove.toMove(): dev.lancy.softwire.dynamite.Move = Move.JMOVE_MAPPINGS[this]
-    ?: throw IllegalArgumentException("Unknown JMove: $this")

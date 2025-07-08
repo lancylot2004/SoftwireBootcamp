@@ -1,17 +1,11 @@
 package dev.lancy.softwire.gildedrose
 
-import net.jqwik.api.Arbitraries
-import net.jqwik.api.Arbitrary
-import net.jqwik.api.Combinators
-import net.jqwik.api.ForAll
-import net.jqwik.api.Property
-import net.jqwik.api.Provide
+import net.jqwik.api.*
 import net.jqwik.api.constraints.IntRange
 import org.junit.jupiter.api.Assertions.assertEquals
 
 class GildedRoseTest {
     companion object {
-        // / In practice, we shouldn't need to test any number greater than this.
         const val MAX_DAYS = 365
     }
 
@@ -47,7 +41,6 @@ class GildedRoseTest {
         var lastQuality = item.quality
 
         repeat(daysPassed) {
-            // Stop testing if we reach the sell by date.
             if (app.items[0].sellIn == 0) return@repeat
 
             app.updateQuality()
@@ -70,7 +63,6 @@ class GildedRoseTest {
         val app = GildedRose(listOf(item))
         var lastQuality = item.quality
 
-        // Force the item to be past its sell by date.
         item.sellIn = 0
 
         repeat(daysPassed) {

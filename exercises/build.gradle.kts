@@ -7,10 +7,12 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 
+group = "dev.lancy.softwire"
+version = "0.0.1"
 repositories {
     mavenCentral()
     flatDir {
-        dirs("libs")
+        dirs("$rootDir/libs")
     }
 }
 
@@ -28,6 +30,9 @@ dependencies {
 
     // jqwik | Property-Based Testing | https://github.com/jqwik-team/jqwik | EPL-2.0
     testImplementation(libs.jqwik)
+
+    // onnxruntime | ONNX Runtime for Java | https://github.com/microsoft/onnxruntime | MIT
+    implementation(libs.onnx.runtime)
 }
 
 tasks.withType<KotlinJvmCompile>().configureEach {
@@ -48,10 +53,21 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 tasks.jar {
-    manifest { attributes("Main-Class" to "dev.lancy.softwire.dynamite.RunnerKt") }
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes["Main-Class"] = "dev.lancy.softwire.dynamite.RunnerKt"
+    }
     archiveFileName.set("dynamiteBot.jar")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(sourceSets.main.get().output) // include your compiled classes
+    from(
+        configurations.runtimeClasspath.get().map {
+            if (it.isDirectory) it else zipTree(it)
+        },
+    )
+
+    // Exclude unnecessary files (optional safety)
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }
 
 tasks.register<UploadTask>("upload") {
